@@ -8,14 +8,14 @@ Using the ESP-IDF SDK provided by Espressif is the most direct way to leverage t
 
 ## Status
 
-* 2025-05-06 WiFi station example added and builds (not incorporated.)
+* 2025-05-06 WiFi station example associates and gets IP address
 * 2025-05-05 Blue flashing LED.
 
 ## Plans
 
-* Add WiFi
 * Add NTP
 * Add MQTT publisher
+* Massive code cleanup
 
 ## 2025-05-05 Setup
 
@@ -149,3 +149,67 @@ hbarta@olive:~/Programming/ESP32/ESP32-ESP-IDF-CLI-start$
 ```
 
 First build try results in undefined macros. Three of these are covered by the example's `Kconfig.projbuild` and I'll just define them in `secrets.h` (SSID and password and other things that do not get committed or pushed) or `proj_wifi.h`.
+
+### WiFi associates and gets IP address
+
+Apparently uses the host name `espressif`.  WiFi related log messages are:
+
+```text
+I (507) wifi station: ESP_WIFI_MODE_STA
+I (527) wifi:wifi driver task: 3ffc013c, prio:23, stack:6656, core=0
+I (537) wifi:wifi firmware version: 79fa3f41ba
+I (537) wifi:wifi certification version: v7.0
+I (537) wifi:config NVS flash: enabled
+I (537) wifi:config nano formatting: disabled
+I (547) wifi:Init data frame dynamic rx buffer num: 32
+I (547) wifi:Init static rx mgmt buffer num: 5
+I (547) wifi:Init management short buffer num: 32
+I (557) wifi:Init dynamic tx buffer num: 32
+I (557) wifi:Init static rx buffer size: 1600
+I (567) wifi:Init static rx buffer num: 10
+I (567) wifi:Init dynamic rx buffer num: 32
+I (577) wifi_init: rx ba win: 6
+I (577) wifi_init: accept mbox: 6
+I (577) wifi_init: tcpip mbox: 32
+I (577) wifi_init: udp mbox: 6
+I (587) wifi_init: tcp mbox: 6
+I (587) wifi_init: tcp tx win: 5760
+I (587) wifi_init: tcp rx win: 5760
+I (597) wifi_init: tcp mss: 1440
+I (597) wifi_init: WiFi IRAM OP enabled
+I (597) wifi_init: WiFi RX IRAM OP enabled
+I (627) phy_init: phy_version 4860,6b7a6e5,Feb  6 2025,14:47:07
+I (697) wifi:mode : sta (08:3a:f2:b9:ac:e8)
+I (697) wifi:enable tsf
+I (707) wifi station: wifi_init_sta finished.
+I (1447) wifi:new:<6,1>, old:<1,0>, ap:<255,255>, sta:<6,1>, prof:1, snd_ch_cfg:0x0
+I (1447) wifi:state: init -> auth (0xb0)
+I (1487) wifi:state: auth -> assoc (0x0)
+I (1507) wifi:state: assoc -> run (0x10)
+I (11507) wifi:state: run -> init (0xcc00)
+I (11517) wifi:new:<6,0>, old:<6,1>, ap:<255,255>, sta:<6,1>, prof:1, snd_ch_cfg:0x0
+I (11517) wifi station: retry to connect to the AP
+I (11517) wifi station: connect to the AP fail
+I (11527) wifi:new:<6,1>, old:<6,0>, ap:<255,255>, sta:<6,1>, prof:1, snd_ch_cfg:0x0
+I (11537) wifi:state: init -> auth (0xb0)
+I (11547) wifi:state: auth -> init (0x8a0)
+I (11547) wifi:new:<6,0>, old:<6,1>, ap:<255,255>, sta:<6,1>, prof:1, snd_ch_cfg:0x0
+I (11557) wifi station: retry to connect to the AP
+I (11557) wifi station: connect to the AP fail
+I (13967) wifi station: retry to connect to the AP
+I (13967) wifi station: connect to the AP fail
+I (13977) wifi:new:<6,1>, old:<6,0>, ap:<255,255>, sta:<6,1>, prof:1, snd_ch_cfg:0x0
+I (13987) wifi:state: init -> auth (0xb0)
+I (14007) wifi:state: auth -> assoc (0x0)
+I (14017) wifi:state: assoc -> run (0x10)
+I (14047) wifi:connected with Giant Voice System, aid = 5, channel 6, 40U, bssid = 5c:e9:31:0a:d3:a4
+I (14047) wifi:security: WPA2-PSK, phy: bgn, rssi: -65
+I (14197) wifi:pm start, type: 1
+
+I (14197) wifi:dp: 1, bi: 102400, li: 3, scale listen interval from 307200 us to 307200 us
+I (14197) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (14237) wifi:<ba-add>idx:0 (ifx:0, 5c:e9:31:0a:d3:a4), tid:1, ssn:0, winSize:64
+I (15257) esp_netif_handlers: sta ip: 192.168.1.187, mask: 255.255.255.0, gw: 192.168.1.1
+I (15257) wifi station: got ip:192.168.1.187
+I (15257) wifi station: connected to ap SSID:??? password:???
+```
