@@ -8,6 +8,7 @@ Using the ESP-IDF SDK provided by Espressif is the most direct way to leverage t
 
 ## Status
 
+* 2025-05-06 WiFi station example added and builds (not incorporated.)
 * 2025-05-05 Blue flashing LED.
 
 ## Plans
@@ -21,7 +22,12 @@ Using the ESP-IDF SDK provided by Espressif is the most direct way to leverage t
 * <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/index.html> Instructions for installing the tool chain and SDK. (I'm installing on Linux - Debian Bookworm.) With everything installed, I start the terminal session and copy the `blink` project files to this directory by:
 
 ```text
+# set environment vars
 . ~/esp/esp-idf/export.sh
+
+# copy the files, not the directory.
+cp -r $IDF_PATH/examples/get-started/blink/* .
+
 # see the original README for suggested targets or run "idf.py set-target"
 idf.py set-target esp32
 
@@ -121,5 +127,25 @@ I (7295) example: Turning the LED ON!
 
 ## 2025-05-05 add WiFi
 
-Copy WiFi files from <https://github.com/HankB/ESP32-ESP-IDF-PlatformIO-start>.
+Copy WiFi files from <https://github.com/HankB/ESP32-ESP-IDF-PlatformIO-start>. No. the APIs seem to have changed. :-/
 
+## 2025-05-06 WiFi from Espressif example
+
+* <https://github.com/espressif/esp-idf/blob/master/examples/wifi/getting_started/station>
+
+And start naming files and headers in a way that avoids potential conflicts. `wifi.c` is just a bit too generic. Let's make that `proj_wifi.c`
+
+```text
+cp $IDF_PATH/examples/wifi/getting_started/station/main/station_example_main.c main/proj_wifi.c
+```
+
+And add to `main/CMakeLists.txt`
+
+```text
+hbarta@olive:~/Programming/ESP32/ESP32-ESP-IDF-CLI-start$ cat main/CMakeLists.txt 
+idf_component_register(SRCS "blink_example_main.c" proj_wifi.c
+                       INCLUDE_DIRS ".")
+hbarta@olive:~/Programming/ESP32/ESP32-ESP-IDF-CLI-start$ 
+```
+
+First build try results in undefined macros. Three of these are covered by the example's `Kconfig.projbuild` and I'll just define them in `secrets.h` (SSID and password and other things that do not get committed or pushed) or `proj_wifi.h`.
