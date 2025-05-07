@@ -16,6 +16,7 @@
 
 #include "proj_wifi.h"
 #include "proj_sntp.h"
+#include "proj_mqtt.h"
 
 static const char *TAG = "example";
 
@@ -50,6 +51,7 @@ void app_main(void)
     wifi_init_sta();
     time_t t = init_sntp();
     ESP_LOGI(TAG,"init_sntp(): %lld", t);
+    init_mqtt();
     
     while (1) {
         ESP_LOGI(TAG, "Turning the LED %s at %lld!", s_led_state == true ? "ON" : "OFF", time(0));

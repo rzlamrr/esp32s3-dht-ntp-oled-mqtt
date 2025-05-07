@@ -8,13 +8,13 @@ Using the ESP-IDF SDK provided by Espressif is the most direct way to leverage t
 
 ## Status
 
-* 2025-05-06 NRP time sync working.
+* 2025-05-06 MQTT5 pub/sub working.
+* 2025-05-06 NTP time sync working.
 * 2025-05-06 WiFi station example associates and gets IP address
 * 2025-05-05 Blue flashing LED.
 
 ## Plans
 
-* Add MQTT publisher
 * Massive code cleanup
 
 ## 2025-05-05 Setup
@@ -216,7 +216,7 @@ I (15257) wifi station: connected to ap SSID:??? password:???
 
 ## 2025-05-06 NTP from other project
 
-From <>
+From <https://github.com/HankB/ESP32-ESP-IDF-PlatformIO-start/tree/main>
 
 ```text
 cp ../ESP32-ESP-IDF-PlatformIO-start/src/sntp.c main/proj_sntp.c
@@ -224,3 +224,154 @@ cp ../ESP32-ESP-IDF-PlatformIO-start/src/sntp.h main/proj_sntp.h
 ```
 
 It was necessary to run `idf.py menuconfig` "Component config -> LWIP -> SNTP" to enable "Request NTP servers from DHCP" so that `esp_sntp_servermode_dhcp` would be included and resolved.
+
+## 2025-05-06 MQTT from other project
+
+No joy, ran into too many errors in headers - starting with the example for mqtt54. (I tested against my Docker `mosquitto` installation and checked the capabilities of 2.0.11 which ships Debian Bookworm and both support mqtt5.)
+
+```text
+cp $IDF_PATH/examples/protocols/mqtt5/main/app_main.c main/proj_mqtt.c
+```
+
+Merge mqtt5 entries to `main/Kconfig.projbuild`. Add line from `sdkconfig.defaults` and run `idf.py menuconfig` to configure ESP_MQTT and example settings.
+
+```text
+hbarta@olive:~/Programming/ESP32/ESP32-ESP-IDF-CLI-start$ cat main/Kconfig.projbuild 
+menu "Example Configuration"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    choice BLINK_LED
+        prompt "Blink LED type"
+        default BLINK_LED_GPIO
+        help
+            Select the LED type. A normal level controlled LED or an addressable LED strip.
+            The default selection is based on the Espressif DevKit boards.
+            You can change the default selection according to your board.
+
+        config BLINK_LED_GPIO
+            bool "GPIO"
+        config BLINK_LED_STRIP
+            bool "LED strip"
+    endchoice
+
+    choice BLINK_LED_STRIP_BACKEND
+        depends on BLINK_LED_STRIP
+        prompt "LED strip backend peripheral"
+        default BLINK_LED_STRIP_BACKEND_RMT if SOC_RMT_SUPPORTED
+        default BLINK_LED_STRIP_BACKEND_SPI
+        help
+            Select the backend peripheral to drive the LED strip.
+
+        config BLINK_LED_STRIP_BACKEND_RMT
+            depends on SOC_RMT_SUPPORTED
+            bool "RMT"
+        config BLINK_LED_STRIP_BACKEND_SPI
+            bool "SPI"
+    endchoice
+
+    config BLINK_GPIO
+        int "Blink GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 8
+        help
+            GPIO number (IOxx) to blink on and off the LED.
+            Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
+
+    config BLINK_PERIOD
+        int "Blink period in ms"
+        range 10 3600000
+        default 1000
+        help
+            Define the blinking period in milliseconds.
+
+    config SNTP_TIME_SERVER
+        string "SNTP server name"
+        default "pool.ntp.org"
+        help
+            Hostname of the main SNTP server.
+
+    choice SNTP_TIME_SYNC_METHOD
+        prompt "Time synchronization method"
+        default SNTP_TIME_SYNC_METHOD_IMMED
+        help
+            Time synchronization method.
+
+        config SNTP_TIME_SYNC_METHOD_IMMED
+            bool "update time immediately when received"
+        config SNTP_TIME_SYNC_METHOD_SMOOTH
+            bool "update time with smooth method (adjtime)"
+        config SNTP_TIME_SYNC_METHOD_CUSTOM
+            bool "custom implementation"
+    endchoice
+
+    config BROKER_URL
+        string "Broker URL"
+        default "mqtt://mqtt.localdomain"
+        help
+            URL of the broker to connect to
+
+    config BROKER_URL_FROM_STDIN
+        bool
+        default y if BROKER_URL = "FROM_STDIN"
+
+endmenu
+hbarta@olive:~/Programming/ESP32/ESP32-ESP-IDF-CLI-start$ cat sdkconfig.defaults
+CONFIG_BLINK_LED_GPIO=y
+CONFIG_BLINK_GPIO=8
+CONFIG_MQTT_PROTOCOL_5=y
+hbarta@olive:~/Programming/ESP32/ESP32-ESP-IDF-CLI-start$ 
+```
+
+Build and resolve issues and it works with my MQTT broker (Mosquitto in a Docker container.) There was an issue when I first ran it:
+
+```text
+ESP_ERROR_CHECK failed: esp_err_t 0x103 (ESP_ERR_INVALID_STATE) at 0x400d9fb0
+--- 0x400d9fb0: init_mqtt at /home/hbarta/Programming/ESP32/ESP32-ESP-IDF-CLI-start/main/proj_mqtt.c:284 (discriminator 1)
+
+file: "./main/proj_mqtt.c" line 284
+func: init_mqtt
+expression: esp_event_loop_create_default()
+
+abort() was called at PC 0x400897df on core 0
+--- 0x400897df: _esp_error_check_failed at /home/hbarta/esp/esp-idf/components/esp_system/esp_err.c:49
+```
+
+It wasn't clear to me what `esp_event_loop_create_default()` did so I commented it out and the example was able to publish w/out difficulty. Switching back to `mqtt://mqtt.eclipseprojects.io` to see if subscriptions work. Seems OK:
+
+```text
+I (3925) mqtt5_example: [APP] Startup..
+I (3925) mqtt5_example: [APP] Free memory: 227460 bytes
+I (3925) mqtt5_example: [APP] IDF version: v5.4.1
+I (3935) mqtt5_example: Other event id:7
+I (3935) example: Turning the LED OFF at 1746654140!
+I (4675) mqtt5_example: MQTT_EVENT_CONNECTED
+I (4685) mqtt5_example: sent publish successful, msg_id=27744
+I (4685) mqtt5_example: sent subscribe successful, msg_id=22531
+I (4685) mqtt5_example: sent subscribe successful, msg_id=22489
+I (4695) mqtt5_example: sent unsubscribe successful, msg_id=27281
+I (4735) mqtt5_client: MQTT_MSG_TYPE_PUBACK return code is 0
+I (4735) mqtt5_example: MQTT_EVENT_PUBLISHED, msg_id=27744
+I (4935) example: Turning the LED ON at 1746654141!
+I (5065) mqtt5_client: MQTT_MSG_TYPE_SUBACK return code is 0
+I (5065) mqtt5_example: MQTT_EVENT_SUBSCRIBED, msg_id=22531
+I (5075) mqtt5_example: sent publish successful, msg_id=0
+I (5075) mqtt5_client: MQTT_MSG_TYPE_SUBACK return code is 2
+I (5075) mqtt5_example: MQTT_EVENT_SUBSCRIBED, msg_id=22489
+I (5085) mqtt5_example: sent publish successful, msg_id=0
+I (5095) mqtt5_example: MQTT_EVENT_DATA
+I (5095) mqtt5_example: key is board, value is esp32
+I (5095) mqtt5_example: key is u, value is user
+I (5105) mqtt5_example: key is p, value is password
+I (5105) mqtt5_example: payload_format_indicator is 1
+I (5115) mqtt5_example: response_topic is /topic/test/response
+I (5115) mqtt5_example: correlation_data is 123456
+I (5125) mqtt5_example: content_type is 
+I (5125) mqtt5_example: TOPIC=/topic/qos1
+I (5125) mqtt5_example: DATA=data_3
+I (5135) mqtt5_client: MQTT_MSG_TYPE_UNSUBACK return code is 0
+I (5135) mqtt5_example: MQTT_EVENT_UNSUBSCRIBED, msg_id=27281
+I (5145) mqtt_client: Client asked to disconnect
+I (5935) example: Turning the LED OFF at 1746654142!
+I (6155) mqtt5_example: MQTT_EVENT_DISCONNECTED
+```
