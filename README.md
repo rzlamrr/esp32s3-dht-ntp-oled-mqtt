@@ -8,12 +8,12 @@ Using the ESP-IDF SDK provided by Espressif is the most direct way to leverage t
 
 ## Status
 
+* 2025-05-06 NRP time sync working.
 * 2025-05-06 WiFi station example associates and gets IP address
 * 2025-05-05 Blue flashing LED.
 
 ## Plans
 
-* Add NTP
 * Add MQTT publisher
 * Massive code cleanup
 
@@ -213,3 +213,14 @@ I (15257) esp_netif_handlers: sta ip: 192.168.1.187, mask: 255.255.255.0, gw: 19
 I (15257) wifi station: got ip:192.168.1.187
 I (15257) wifi station: connected to ap SSID:??? password:???
 ```
+
+## 2025-05-06 NTP from other project
+
+From <>
+
+```text
+cp ../ESP32-ESP-IDF-PlatformIO-start/src/sntp.c main/proj_sntp.c
+cp ../ESP32-ESP-IDF-PlatformIO-start/src/sntp.h main/proj_sntp.h
+```
+
+It was necessary to run `idf.py menuconfig` "Component config -> LWIP -> SNTP" to enable "Request NTP servers from DHCP" so that `esp_sntp_servermode_dhcp` would be included and resolved.

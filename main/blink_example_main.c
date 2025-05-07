@@ -11,10 +11,11 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
-#include "led_strip.h"
 #include "sdkconfig.h"
+#include <time.h>
 
 #include "proj_wifi.h"
+#include "proj_sntp.h"
 
 static const char *TAG = "example";
 
@@ -47,9 +48,11 @@ void app_main(void)
     /* Configure the peripheral according to the LED type */
     configure_led();
     wifi_init_sta();
-
+    time_t t = init_sntp();
+    ESP_LOGI(TAG,"init_sntp(): %lld", t);
+    
     while (1) {
-        ESP_LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");
+        ESP_LOGI(TAG, "Turning the LED %s at %lld!", s_led_state == true ? "ON" : "OFF", time(0));
         blink_led();
         /* Toggle the LED state */
         s_led_state = !s_led_state;
