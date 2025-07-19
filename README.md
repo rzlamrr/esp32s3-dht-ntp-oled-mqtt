@@ -1,4 +1,4 @@
-# ESP32 using ESP-IDF from the coommand line.
+# ESP32 and ESP32-C3 using ESP-IDF from the command line.
 
 *The starting point for this project is the `blink` example and the original README can be found at <https://github.com/espressif/esp-idf/blob/master/examples/get-started/blink/README.md>. Everything in this README is mine.
 
@@ -8,6 +8,7 @@ Using the ESP-IDF SDK provided by Espressif is the most direct way to leverage t
 
 ## Status
 
+* 2025-07-19 ESP32-C3 (RISC-V based) testing.
 * 2025-05-06 MQTT5 pub/sub working.
 * 2025-05-06 NTP time sync working.
 * 2025-05-06 WiFi station example associates and gets IP address
@@ -15,6 +16,8 @@ Using the ESP-IDF SDK provided by Espressif is the most direct way to leverage t
 
 ## Plans
 
+* Migrate to ESP32-C3 (should work with Tensilica based ESP32.)
+* Implement multiple MQTT brokers (e.g. if one does not work, try another.)
 * Massive code cleanup
 
 ## 2025-05-05 Setup
@@ -227,7 +230,7 @@ It was necessary to run `idf.py menuconfig` "Component config -> LWIP -> SNTP" t
 
 ## 2025-05-06 MQTT from other project
 
-No joy, ran into too many errors in headers - starting with the example for mqtt54. (I tested against my Docker `mosquitto` installation and checked the capabilities of 2.0.11 which ships Debian Bookworm and both support mqtt5.)
+No joy, ran into too many errors in headers - starting with the example for mqtt5. (I tested against my Docker `mosquitto` installation and checked the capabilities of 2.0.11 which ships Debian Bookworm and both support mqtt5.)
 
 ```text
 cp $IDF_PATH/examples/protocols/mqtt5/main/app_main.c main/proj_mqtt.c
@@ -375,3 +378,17 @@ I (5145) mqtt_client: Client asked to disconnect
 I (5935) example: Turning the LED OFF at 1746654142!
 I (6155) mqtt5_example: MQTT_EVENT_DISCONNECTED
 ```
+
+## 2025-07-19 ESP32-C3 RISC-V
+
+See also <https://github.com/HankB/Fun_with_ESP32/tree/main/ESP-IDF/blink#2025-07-19-local-addendum> for notes on using a previous example with the ESP32-C3. Note that `idf.py set-target esp32c3` will reset the configuration to defaults so everything previously configured will require reconfiguration.
+
+### Prep
+
+See "Fun_with..." for instructions on installing the tool chain, configuriing environment variables and selecting the ESP32-C3 target.
+
+```text
+idf.py menuconfig # and check entries in "Example Configuration" and "Component config -> LWIP -> SNTP"
+```
+
+Note: SSID and password does not come from example config but rather the `secrets.h` file which the user must provide. The example builds but does not connect to my AP. Setting this aside to try a WiFi example. No joy. Neither the `station` or the `softAP` examples provided any workable WiFi. These are going back to Amazon.
