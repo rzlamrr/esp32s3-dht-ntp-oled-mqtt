@@ -52,7 +52,9 @@ void app_main(void)
     time_t t = init_sntp();
     ESP_LOGI(TAG,"init_sntp(): %lld", t);
     init_mqtt();
-    
+    esp_log_level_set("*", ESP_LOG_WARN); 
+    // ref: https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/log.html#dynamic-log-level-control
+     
     while (1) {
         ESP_LOGI(TAG, "Turning the LED %s at %lld!", s_led_state == true ? "ON" : "OFF", time(0));
         blink_led();
