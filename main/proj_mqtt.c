@@ -4,6 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ /*
+  * Comments local to this repo (https://github.com/HankB/ESP32-ESP-IDF-CLI-start)
+  *
+  * This was originally an Espressif example file and has been mangled 
+  * to fit the needs of this project. There is a *lot* going on here that 
+  * I don't need for my personal system but I am leaving in place for the
+  * possible benefit of any others that find it helpful. In particular, I
+  * do not use TLS nor do I require a password to connect to the broker.
+  * 
+  * At present I'm implementing a crude sort of high availability by 
+  * providing a list of brokers that the app can cycle through in the event
+  * that it cannot connect to any given broker. No attempt is made to 
+  * provide the entire context required for more advanced connections but
+  * rather just a list of IP addresses or broker names.
+  * 
+  * The broker specified by `idf.py menuconfig` will be removed and otherwise
+  * ignored. The broker list will be included in `secrets.h`
+  */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -15,11 +34,17 @@
 //#include "protocol_examples_common.h"
 #include "esp_log.h"
 #include "mqtt_client.h"
-
+#include "secrets.h"
 
 #include "proj_mqtt.h"
 
-static const char *TAG = "mqtt5_example";
+static const char *TAG = "mqtt";
+
+// broker list can look like 
+// #define broker_list "mqtt://192.168.1.100", "mqtt://example.localdomain"
+static const char* brokers[] = { broker_list };
+//hoist "client" out of mqtt5_app_start() to use in proj_mqtt_publish
+static esp_mqtt_client_handle_t client;
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
@@ -66,10 +91,14 @@ static esp_mqtt5_unsubscribe_property_config_t unsubscribe_property = {
     .share_name = "group1",
 };
 
+        /*
+Let's not disconnect
+
 static esp_mqtt5_disconnect_property_config_t disconnect_property = {
     .session_expiry_interval = 60,
     .disconnect_reason = 0,
 };
+*/
 
 static void print_user_property(mqtt5_user_property_handle_t user_property)
 {
@@ -87,6 +116,10 @@ static void print_user_property(mqtt5_user_property_handle_t user_property)
             }
             free(item);
         }
+        else {
+            ESP_LOGI(TAG, "print_user_property() 0 properties");
+          
+        }
     }
 }
 
@@ -102,6 +135,8 @@ static void print_user_property(mqtt5_user_property_handle_t user_property)
  */
 static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
+    esp_log_level_set(TAG, ESP_LOG_INFO); 
+
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32, base, event_id);
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
@@ -154,11 +189,14 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
     case MQTT_EVENT_UNSUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
         print_user_property(event->property->user_property);
+        /*
+        Let's not disconnect just yet.
         esp_mqtt5_client_set_user_property(&disconnect_property.user_property, user_property_arr, USE_PROPERTY_ARR_SIZE);
         esp_mqtt5_client_set_disconnect_property(client, &disconnect_property);
         esp_mqtt5_client_delete_user_property(disconnect_property.user_property);
         disconnect_property.user_property = NULL;
         esp_mqtt_client_disconnect(client);
+        */
         break;
     case MQTT_EVENT_PUBLISHED:
         ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
@@ -185,6 +223,10 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
             ESP_LOGI(TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
         }
         break;
+    case MQTT_EVENT_BEFORE_CONNECT:
+            ESP_LOGI(TAG, "MQTT_EVENT_BEFORE_CONNECT");
+        break;
+
     default:
         ESP_LOGI(TAG, "Other event id:%d", event->event_id);
         break;
@@ -209,7 +251,7 @@ static void mqtt5_app_start(void)
     };
 
     esp_mqtt_client_config_t mqtt5_cfg = {
-        .broker.address.uri = CONFIG_BROKER_URL,
+        .broker.address.uri = brokers[0],
         .session.protocol_ver = MQTT_PROTOCOL_V_5,
         .network.disable_auto_reconnect = true,
         .credentials.username = "123",
@@ -221,32 +263,9 @@ static void mqtt5_app_start(void)
         .session.last_will.retain = true,
     };
 
-#if CONFIG_BROKER_URL_FROM_STDIN
-    char line[128];
 
-    if (strcmp(mqtt5_cfg.uri, "FROM_STDIN") == 0) {
-        int count = 0;
-        printf("Please enter url of mqtt broker\n");
-        while (count < 128) {
-            int c = fgetc(stdin);
-            if (c == '\n') {
-                line[count] = '\0';
-                break;
-            } else if (c > 0 && c < 127) {
-                line[count] = c;
-                ++count;
-            }
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-        }
-        mqtt5_cfg.broker.address.uri = line;
-        printf("Broker url: %s\n", line);
-    } else {
-        ESP_LOGE(TAG, "Configuration mismatch: wrong broker url");
-        abort();
-    }
-#endif /* CONFIG_BROKER_URL_FROM_STDIN */
-
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt5_cfg);
+    //hoist "client" out of mqtt5_app_start() to use in proj_mqtt_publish
+    client = esp_mqtt_client_init(&mqtt5_cfg);
 
     /* Set connection properties and user properties */
     esp_mqtt5_client_set_user_property(&connect_property.user_property, user_property_arr, USE_PROPERTY_ARR_SIZE);
@@ -266,11 +285,11 @@ static void mqtt5_app_start(void)
 
 void init_mqtt(void)
 {
-
+    esp_log_level_set(TAG, ESP_LOG_INFO); 
     ESP_LOGI(TAG, "[APP] Startup..");
     ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
     ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
-
+/*
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set("mqtt_client", ESP_LOG_VERBOSE);
     esp_log_level_set("mqtt_example", ESP_LOG_VERBOSE);
@@ -278,6 +297,7 @@ void init_mqtt(void)
     esp_log_level_set("esp-tls", ESP_LOG_VERBOSE);
     esp_log_level_set("transport", ESP_LOG_VERBOSE);
     esp_log_level_set("outbox", ESP_LOG_VERBOSE);
+*/
 
     ESP_ERROR_CHECK(nvs_flash_init());
     //ESP_ERROR_CHECK(esp_netif_init());
@@ -290,4 +310,17 @@ void init_mqtt(void)
     //ESP_ERROR_CHECK(example_connect());
 
     mqtt5_app_start();
+}
+
+
+int proj_mqtt_publish(const char* topic, const char* payload, int len, int qos, int retain)
+{
+    esp_log_level_set(TAG, ESP_LOG_INFO); 
+    /*
+    esp_mqtt5_client_set_user_property(&publish_property.user_property, user_property_arr, USE_PROPERTY_ARR_SIZE);
+    esp_mqtt5_client_set_publish_property(client, &publish_property);
+    */
+    int msg_id = esp_mqtt_client_publish(client, topic, payload, len, 1, 1);
+    ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+    return msg_id;
 }

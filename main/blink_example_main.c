@@ -7,11 +7,12 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
-#include "sdkconfig.h"
+#include "esp_wifi.h"
 #include <time.h>
 
 #include "proj_wifi.h"
@@ -55,8 +56,20 @@ void app_main(void)
     esp_log_level_set("*", ESP_LOG_WARN); 
     // ref: https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/log.html#dynamic-log-level-control
      
+#define payload_len 64
+    multi_heap_info_t   heap_info;
+    wifi_ap_record_t    ap_info;
+    char payload_buf[payload_len];
+
     while (1) {
         ESP_LOGI(TAG, "Turning the LED %s at %lld!", s_led_state == true ? "ON" : "OFF", time(0));
+        heap_caps_get_info(&heap_info, MALLOC_CAP_8BIT);
+        esp_wifi_sta_get_ap_info(&ap_info);
+        int len=snprintf(payload_buf, payload_len, "heap total:%u, used:%u, rssi:%d",
+            heap_info.total_free_bytes, heap_info.total_allocated_bytes,
+            ap_info.rssi);
+
+        proj_mqtt_publish("/topic/repeating/C3", payload_buf, len, 0, 0);
         blink_led();
         /* Toggle the LED state */
         s_led_state = !s_led_state;
