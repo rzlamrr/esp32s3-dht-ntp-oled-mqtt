@@ -14,6 +14,11 @@ Using the ESP-IDF SDK provided by Espressif is the most direct way to leverage t
 
 ## Status
 
+* 2025-07-21 Tweak MQTTT to
+    * not close the connection
+    * not subscribe (?)
+    * publish messages every second
+    * Working with both ESP32-C3 and ESP32 architectures.
 * 2025-07-20 Continue working with an ESP32 NodeMCU (There seem to be several variations)
 * 2025-07-19 ESP32-C3 (RISC-V based) testing. Limited success. Working Blink and DS18B20. WiFi almost never connects. Boards on their way back to Amazon.
 * 2025-05-06 MQTT5 pub/sub working.
