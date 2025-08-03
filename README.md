@@ -395,6 +395,23 @@ I (6155) mqtt5_example: MQTT_EVENT_DISCONNECTED
 
 See also <https://github.com/HankB/Fun_with_ESP32/tree/main/ESP-IDF/blink#2025-07-19-local-addendum> for notes on using a previous example with the ESP32-C3. Note that `idf.py set-target esp32c3` will reset the configuration to defaults so everything previously configured will require reconfiguration.
 
+Some cleanup and enhancements complete. Monitoring stack usage - seems good after days, but need to add an 'uptime' count to confirm. Monitor using:
+
+```text
+mosquitto_sub -t \# -v -h olive # probably need to use the name for your broker.
+```
+
+The output looks like the following after running about a week or so. I'm confident the example is not leaking memory under normal operation. When I deploy, I'll likely include things like uptime (seconds), heap, and RSSI in the eventual payload.
+
+```text
+/topic/repeating/C3 heap total:206780, used:75244, rssi:-62
+/topic/repeating heap total:216684, used:76864, rssi:-60
+/topic/repeating/C3 heap total:206780, used:75244, rssi:-61
+/topic/repeating heap total:216684, used:76864, rssi:-61
+/topic/repeating/C3 heap total:206780, used:75244, rssi:-61
+/topic/repeating heap total:216684, used:76864, rssi:-63
+```
+
 ### Prep
 
 See "Fun_with..." for instructions on installing the tool chain, configuriing environment variables and selecting the ESP32-C3 target.
@@ -405,4 +422,4 @@ idf.py set-target [esp32|esp32c3] # or any listed by "idf.py set-target"
 idf.py menuconfig # and check entries in "Example Configuration" and "Component config -> LWIP -> SNTP -> Request NTP servers from DHCP"
 ```
 
-Note: SSID and password does not come from example config but rather the `secrets.h` file which the user must provide. The example builds but does not connect to my AP. Setting this aside to try a WiFi example. No joy. Neither the `station` or the `softAP` examples provided any workable WiFi. These are going back to Amazon. Or not. I found this post that suggested reducing the TX power <https://forum.arduino.cc/t/no-wifi-connect-with-esp32-c3-super-mini/1324046/21> I tried it in the Arduino sketch and it worked. I commented the line out and WiFi still worked. I tried my ESP-IDF sketch and it worked. And now it is not. :-/ Occasionally it does connect but not reliably enough to be useful.
+Note: SSID and password does not come from example config but rather the `secrets.h` file which the user must provide. The example builds but does not connect to my AP. Setting this aside to try a WiFi example. No joy. Neither the `station` or the `softAP` examples provided any workable WiFi. These are going back to Amazon. Or not. I found this post that suggested reducing the TX power <https://forum.arduino.cc/t/no-wifi-connect-with-esp32-c3-super-mini/1324046/21> I tried it in the Arduino sketch and it worked. I commented the line out and WiFi still worked. I tried my ESP-IDF sketch and it worked. And now it is not. :-/ Occasionally it does connect but not reliably enough to be useful. Followup: I bought some other ESP32-C3 boards and they work with WiFi just fine.
