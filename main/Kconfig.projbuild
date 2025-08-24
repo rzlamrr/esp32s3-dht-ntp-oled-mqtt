@@ -67,7 +67,7 @@ menu "Example Configuration"
     endchoice
 
     config BROKER_URL
-        string "Broker URL"
+        string "Broker URL, comma separated for multiple"
         default "mqtt://mqtt.localdomain"
         help
             URL of the broker to connect to

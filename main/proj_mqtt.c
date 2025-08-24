@@ -34,15 +34,15 @@
 //#include "protocol_examples_common.h"
 #include "esp_log.h"
 #include "mqtt_client.h"
-#include "secrets.h"
 
 #include "proj_mqtt.h"
 
 static const char *TAG = "mqtt";
 
 // broker list can look like 
-// #define broker_list "mqtt://192.168.1.100", "mqtt://example.localdomain"
-static const char* brokers[] = { broker_list };
+// #define broker_list "mqtt://192.168.1.103" //, "mqtt://example.localdomain"
+// atur di BROKER_URL
+static const char* brokers[] = { CONFIG_BROKER_URL };
 //hoist "client" out of mqtt5_app_start() to use in proj_mqtt_publish
 static esp_mqtt_client_handle_t client;
 
