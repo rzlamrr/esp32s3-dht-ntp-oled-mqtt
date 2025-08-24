@@ -1,6 +1,13 @@
-menu "Example Configuration"
+menu "Main Configuration"
 
     orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config DHT_GPIO
+        int "DHT GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 4
+        help
+            GPIO number (IOxx) to DHT.
 
     choice BLINK_LED
         prompt "Blink LED type"
@@ -67,7 +74,7 @@ menu "Example Configuration"
     endchoice
 
     config BROKER_URL
-        string "Broker URL, comma separated for multiple"
+        string "Broker URL"
         default "mqtt://mqtt.localdomain"
         help
             URL of the broker to connect to

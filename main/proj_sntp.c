@@ -61,7 +61,7 @@ static void initialize_sntp(void)
     ESP_LOGI(TAG, "Initializing SNTP");
     esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
 
-    esp_sntp_setservername(0,  sntp_server);
+    esp_sntp_setservername(0,  CONFIG_SNTP_TIME_SERVER);
     sntp_set_time_sync_notification_cb(time_sync_notification_cb);
     esp_sntp_init();
 }
