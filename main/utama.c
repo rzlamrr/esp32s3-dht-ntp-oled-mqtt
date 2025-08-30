@@ -106,7 +106,7 @@ void app_main(void)
     init_dht();
 
     // 3. Atur Zona Waktu (PENTING!)
-    setenv("TZ", "KST-9", 1);
+    setenv("TZ", CONFIG_TIMEZONE, 1);
     tzset();
 
     // 4. Inisialisasi MQTT
@@ -154,7 +154,7 @@ void app_main(void)
                 (long long)now, temperature, humidity);
         
         // Kirim data ke MQTT
-        proj_mqtt_publish("2rpk/random", json_payload, strlen(json_payload), 0, 0);
+        proj_mqtt_publish(CONFIG_MQTT_TOPIC, json_payload, strlen(json_payload), 0, 0);
 
         // Tampilkan teks sensor yang berjalan di baris paling bawah (page 7)
         // Fungsi ini bersifat blocking dan akan menjadi delay utama untuk loop ini

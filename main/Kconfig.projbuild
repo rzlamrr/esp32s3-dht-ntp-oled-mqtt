@@ -9,35 +9,6 @@ menu "Main Configuration"
         help
             GPIO number (IOxx) to DHT.
 
-    choice BLINK_LED
-        prompt "Blink LED type"
-        default BLINK_LED_GPIO
-        help
-            Select the LED type. A normal level controlled LED or an addressable LED strip.
-            The default selection is based on the Espressif DevKit boards.
-            You can change the default selection according to your board.
-
-        config BLINK_LED_GPIO
-            bool "GPIO"
-        config BLINK_LED_STRIP
-            bool "LED strip"
-    endchoice
-
-    choice BLINK_LED_STRIP_BACKEND
-        depends on BLINK_LED_STRIP
-        prompt "LED strip backend peripheral"
-        default BLINK_LED_STRIP_BACKEND_RMT if SOC_RMT_SUPPORTED
-        default BLINK_LED_STRIP_BACKEND_SPI
-        help
-            Select the backend peripheral to drive the LED strip.
-
-        config BLINK_LED_STRIP_BACKEND_RMT
-            depends on SOC_RMT_SUPPORTED
-            bool "RMT"
-        config BLINK_LED_STRIP_BACKEND_SPI
-            bool "SPI"
-    endchoice
-
     config BLINK_GPIO
         int "Blink GPIO number"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
@@ -46,32 +17,17 @@ menu "Main Configuration"
             GPIO number (IOxx) to blink on and off the LED.
             Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
 
-    config BLINK_PERIOD
-        int "Blink period in ms"
-        range 10 3600000
-        default 1000
-        help
-            Define the blinking period in milliseconds.
-
     config SNTP_TIME_SERVER
         string "SNTP server name"
         default "pool.ntp.org"
         help
             Hostname of the main SNTP server.
 
-    choice SNTP_TIME_SYNC_METHOD
-        prompt "Time synchronization method"
-        default SNTP_TIME_SYNC_METHOD_IMMED
+    config TIMEZONE
+        string "Timezone"
+        default "KST-9"
         help
-            Time synchronization method.
-
-        config SNTP_TIME_SYNC_METHOD_IMMED
-            bool "update time immediately when received"
-        config SNTP_TIME_SYNC_METHOD_SMOOTH
-            bool "update time with smooth method (adjtime)"
-        config SNTP_TIME_SYNC_METHOD_CUSTOM
-            bool "custom implementation"
-    endchoice
+            Timezone string, see <https://sourceware.org/glibc/manual/latest/html_node/Proleptic-TZ.html>.
 
     config BROKER_URL
         string "Broker URL"
@@ -79,8 +35,10 @@ menu "Main Configuration"
         help
             URL of the broker to connect to
 
-    config BROKER_URL_FROM_STDIN
-        bool
-        default y if BROKER_URL = "FROM_STDIN"
+    config MQTT_TOPIC
+        string "MQTT Topic"
+        default "/weather/data"
+        help
+            MQTT topic to publish the data to
 
 endmenu
